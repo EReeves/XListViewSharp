@@ -1,14 +1,16 @@
 ﻿<Properties>
-  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="Android.015d1689511c2608" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="XListViewSharp\view\XListView.cs">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="Android.01498FC01800C00B" />
+  <MonoDevelop.Ide.Workbench>
     <Files>
-      <File FileName="XListViewSharp\MainActivity.cs" Line="1" Column="1" />
-      <File FileName="XListViewSharp\view\XListViewHeader.cs" Line="38" Column="38" />
-      <File FileName="XListViewSharp\view\XListViewFooter.cs" Line="1" Column="1" />
+      <File FileName="XListViewSharp\view\XListViewHeader.cs" Line="34" Column="34" />
+      <File FileName="XListViewSharp\view\XListViewFooter.cs" Line="35" Column="35" />
       <File FileName="XListViewSharp\XListViewActivity.cs" Line="1" Column="1" />
-      <File FileName="XListViewSharp\view\XListView.cs" Line="68" Column="68" />
+      <File FileName="XListViewSharp\view\XListView.cs" Line="21" Column="21" />
       <File FileName="XListViewSharp\Resources\Resource.designer.cs" Line="1" Column="1" />
-      <File FileName="XListViewSharp\Resources\values\Strings.xml" Line="2" Column="2" />
+      <File FileName="XListViewSharp\Resources\values\Strings.xml" Line="1" Column="1" />
+      <File FileName="XListViewSharp\Resources\layout\list_item.xaml" Line="1" Column="1" />
+      <File FileName="XListViewSharp\Resources\layout\xlistview_footer.xaml" Line="1" Column="1" />
+      <File FileName="XListViewSharp\Resources\layout\xlistview_header.xaml" Line="1" Column="1" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>

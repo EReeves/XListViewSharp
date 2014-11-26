@@ -6,13 +6,15 @@ using System.Text;
 
 using Android.App;
 using Android.Content;
+using Android.Graphics;
 using Android.OS;
 using Android.Runtime;
 using Android.Util;
 using Android.Views;
+using Android.Views.Animations;
 using Android.Widget;
 using Android.Animation;
-
+using Java.Interop;
 using XListViewSharp;
 
 namespace XListViewSharp
@@ -23,10 +25,10 @@ namespace XListViewSharp
 
         private float mLastY = -1; // save event y
         private Scroller mScroller; // used for scroll back
-        //private OnScrollListener mScrollListener; // user's scroll listener
+        private IOnScrollListener mScrollListener; // user's scroll listener
 
         // the interface to trigger refresh and load more.
-        //private IXListViewListener mListViewListener;
+        private IXListViewListener mListViewListener;
 
         // -- header view
         private XListViewHeader mHeaderView;
@@ -72,7 +74,7 @@ namespace XListViewSharp
         }
 
         private void InitWithContext(Context context) {
-            mScroller = new Scroller(context, Android.Views.Animations.DecelerateInterpolator);
+            mScroller = new Scroller(context, new Android.Views.Animations.DecelerateInterpolator());
             // XListView need the scroll event, and it will dispatch the event to
             // user's listener (as a proxy).
             base.SetOnScrollListener(this);
@@ -87,14 +89,16 @@ namespace XListViewSharp
             // init footer view
             mFooterView = new XListViewFooter(context);
 
-            // init header heigh
-            mHeaderView.ViewTreeObserver.AddOnGlobalLayoutListener( () => {
+            GlobalLayoutListener listener = null;
+            listener = new GlobalLayoutListener(new Action(() =>
+            {
                 mHeaderViewHeight = mHeaderViewContent.Height;
-                mHeaderView.ViewTreeObserver.RemoveGlobalOnLayoutListener(this); //?
-            }
-            );
-                
-                /*
+                mHeaderView.ViewTreeObserver.RemoveGlobalOnLayoutListener(listener);
+            }));
+            // init header heigh
+            mHeaderView.ViewTreeObserver.AddOnGlobalLayoutListener(listener);
+
+            /*
                 .getViewTreeObserver().addOnGlobalLayoutListener(
 
                 @Override
@@ -141,14 +145,11 @@ namespace XListViewSharp
                 mFooterView.SetOnClickListener(null);
             } else {
                 mPullLoading = false;
-                mFooterView.show();
+                mFooterView.Show();
                 mFooterView.SetState(XListViewFooter.STATE_NORMAL);
                 // both "pull up" and "click" will invoke load more.
 
-                mFooterView.OnClick += () =>
-                {
-                    mFooterView.StartLoadMore(); //Have to implement these in Footer.
-                };
+                mFooterView.SetOnClickListener(new OnClickListener(StartLoadMore));
 
                 /*mFooterView.setOnClickListener(new OnClickListener() {
                     @Override
@@ -162,7 +163,7 @@ namespace XListViewSharp
         /**
      * stop refresh, reset header view.
      */
-        public void stopRefresh() {
+        public void StopRefresh() {
             if (mPullRefreshing == true) {
                 mPullRefreshing = false;
                 ResetHeaderHeight();
@@ -172,7 +173,7 @@ namespace XListViewSharp
         /**
      * stop load more, reset footer view.
      */
-        public void stopLoadMore() {
+        public void StopLoadMore() {
             if (mPullLoading == true) {
                 mPullLoading = false;
                 mFooterView.SetState(XListViewFooter.STATE_NORMAL);
@@ -184,11 +185,11 @@ namespace XListViewSharp
      * 
      * @param time
      */
-        public void setRefreshTime(String time) {
+        public void SetRefreshTime(String time) {
             mHeaderTimeView.Text = time;
         }
 
-        private void invokeOnScrolling() {
+        private void InvokeOnScrolling() {
             /*if (mScrollListener instanceof OnXScrollListener) {
                 OnXScrollListener l = (OnXScrollListener) mScrollListener;
                 l.onXScrolling(this);
@@ -208,7 +209,7 @@ namespace XListViewSharp
 
             if (mEnablePullRefresh && !mPullRefreshing) { // 未处于刷新状态，更新箭头
 
-                if (mHeaderView.getVisiableHeight() > mHeaderViewHeight) 
+                if (mHeaderView.GetVisibleHeight() > mHeaderViewHeight) 
                 {               
                     mHeaderView.SetState(XListViewHeader.STATE_READY);
                 } 
@@ -225,7 +226,7 @@ namespace XListViewSharp
      */
         private void ResetHeaderHeight() {
 
-            int height = mHeaderView.GetVisiableHeight();
+            int height = mHeaderView.GetVisibleHeight();
 
             if (height == 0) // not visible.
                 return;
@@ -248,122 +249,125 @@ namespace XListViewSharp
         }
 
         private void UpdateFooterHeight(float delta) {
-            int height = mFooterView.getBottomMargin() + (int) delta;
+            int height = mFooterView.GetBottomMargin() + (int) delta;
             if (mEnablePullLoad && !mPullLoading) {
                 if (height > PULL_LOAD_MORE_DELTA) { // height enough to invoke load
                     // more.
-                    mFooterView.setState(XListViewFooter.STATE_READY);
+                    mFooterView.SetState(XListViewFooter.STATE_READY);
                 } else {
-                    mFooterView.setState(XListViewFooter.STATE_NORMAL);
+                    mFooterView.SetState(XListViewFooter.STATE_NORMAL);
                 }
             }
-            mFooterView.setBottomMargin(height);
+            mFooterView.SetBottomMargin(height);
 
             //      setSelection(mTotalItemCount - 1); // scroll to bottom
         }
 
-        private void resetFooterHeight() {
-            int bottomMargin = mFooterView.getBottomMargin();
+        private void ResetFooterHeight() {
+            int bottomMargin = mFooterView.GetBottomMargin();
             if (bottomMargin > 0) {
                 mScrollBack = SCROLLBACK_FOOTER;
-                mScroller.startScroll(0, bottomMargin, 0, -bottomMargin,
+                mScroller.StartScroll(0, bottomMargin, 0, -bottomMargin,
                     SCROLL_DURATION);
-                invalidate();
+                Invalidate();
             }
         }
 
-        private void startLoadMore() {
+        private void StartLoadMore() {
             mPullLoading = true;
-            mFooterView.setState(XListViewFooter.STATE_LOADING);
+            mFooterView.SetState(XListViewFooter.STATE_LOADING);
             if (mListViewListener != null) {
-                mListViewListener.onLoadMore();
+                mListViewListener.OnLoadMore();//nLoadMore();
             }
         }
 
-        public override bool onTouchEvent(MotionEvent ev) {
+        public override bool OnTouchEvent(MotionEvent ev) {
             if (mLastY == -1) {
-                mLastY = ev.getRawY();
+                mLastY = ev.RawY;
             }
 
-            switch (ev.getAction()) {
-                case MotionEvent.ACTION_DOWN:
-                    mLastY = ev.getRawY();
+            switch (ev.Action) {
+                case MotionEventActions.Down:
+                    mLastY = ev.RawY;
                     break;
-                case MotionEvent.ACTION_MOVE:
-                    final float deltaY = ev.getRawY() - mLastY;
-                    mLastY = ev.getRawY();
-                    if (getFirstVisiblePosition() == 0
-                        && (mHeaderView.getVisiableHeight() > 0 || deltaY > 0)) {
+                case MotionEventActions.Move:
+                    float deltaY = ev.RawY - mLastY;
+                    mLastY = ev.RawY;
+                    if (this.FirstVisiblePosition == 0
+                        && (mHeaderView.GetVisibleHeight() > 0 || deltaY > 0)) {
                         // the first item is showing, header has shown or pull down.
-                        updateHeaderHeight(deltaY / OFFSET_RADIO);
-                        invokeOnScrolling();
-                    } else if (getLastVisiblePosition() == mTotalItemCount - 1
-                        && (mFooterView.getBottomMargin() > 0 || deltaY < 0)) {
+                        UpdateHeaderHeight(deltaY / OFFSET_RADIO);
+                        InvokeOnScrolling();
+                    } else if (this.LastVisiblePosition == mTotalItemCount - 1
+                        && (mFooterView.GetBottomMargin() > 0 || deltaY < 0)) {
                         // last item, already pulled up or want to pull up.
-                        updateFooterHeight(-deltaY / OFFSET_RADIO);
+                        UpdateFooterHeight(-deltaY / OFFSET_RADIO);
                     }
                     break;
                 default:
                     mLastY = -1; // reset
-                    if (getFirstVisiblePosition() == 0) {
+                    if (this.FirstVisiblePosition == 0)
+                    {
                         // invoke refresh
                         if (mEnablePullRefresh
-                            && mHeaderView.getVisiableHeight() > mHeaderViewHeight) {
+                            && mHeaderView.GetVisibleHeight() > mHeaderViewHeight) {
                             mPullRefreshing = true;
-                            mHeaderView.setState(XListViewHeader.STATE_REFRESHING);
+                            mHeaderView.SetState(XListViewHeader.STATE_REFRESHING);
                             if (mListViewListener != null) {
-                                mListViewListener.onRefresh();
+                                mListViewListener.OnRefresh();
                             }
                         }
-                        resetHeaderHeight();
-                    } else if (getLastVisiblePosition() == mTotalItemCount - 1) {
+                        ResetHeaderHeight();
+                    } else if (this.LastVisiblePosition == mTotalItemCount - 1) {
                         // invoke load more.
                         if (mEnablePullLoad
-                            && mFooterView.getBottomMargin() > PULL_LOAD_MORE_DELTA
+                            && mFooterView.GetBottomMargin() > PULL_LOAD_MORE_DELTA
                             && !mPullLoading) {
-                            startLoadMore();
+                            StartLoadMore();
                         }
-                        resetFooterHeight();
+                        ResetFooterHeight();
                     }
                     break;
             }
-            return super.onTouchEvent(ev);
+            return base.OnTouchEvent(ev);//super.onTouchEvent(ev);
         }
             
-        public override void computeScroll() {
-            if (mScroller.computeScrollOffset()) {
+        public override void ComputeScroll() {
+            if (mScroller.ComputeScrollOffset()) {
                 if (mScrollBack == SCROLLBACK_HEADER) {
-                    mHeaderView.setVisiableHeight(mScroller.getCurrY());
+                    mHeaderView.SetVisibleHeight(mScroller.CurrY);
                 } else {
-                    mFooterView.setBottomMargin(mScroller.getCurrY());
+                    mFooterView.SetBottomMargin(mScroller.CurrY);
                 }
-                postInvalidate();
-                invokeOnScrolling();
+                PostInvalidate();
+                InvokeOnScrolling();
             }
-            super.computeScroll();
+            base.ComputeScroll();
         }
             
-        public override void setOnScrollListener(OnScrollListener l) {
+        public override void SetOnScrollListener(IOnScrollListener l) {
             mScrollListener = l;
         }
-            
-        public override void onScrollStateChanged(AbsListView view, int scrollState) {
-            if (mScrollListener != null) {
-                mScrollListener.onScrollStateChanged(view, scrollState);
-            }
-        }
-            
-        public override void onScroll(AbsListView view, int firstVisibleItem,
+                       
+        public void OnScroll(AbsListView view, int firstVisibleItem,
             int visibleItemCount, int totalItemCount) {
             // send to user's listener
             mTotalItemCount = totalItemCount;
             if (mScrollListener != null) {
-                mScrollListener.onScroll(view, firstVisibleItem, visibleItemCount,
+                mScrollListener.OnScroll(view, firstVisibleItem, visibleItemCount,
                     totalItemCount);
             }
         }
 
-        public override void setXListViewListener(IXListViewListener l) {
+        public void OnScrollStateChanged(AbsListView view, ScrollState scrollState)
+        {
+            if (mScrollListener != null)
+            {
+                mScrollListener.OnScrollStateChanged(view, scrollState);
+            }
+        }
+
+        public void SetXListViewListener(IXListViewListener l) {
             mListViewListener = l;
         }
 
@@ -371,17 +375,63 @@ namespace XListViewSharp
      * you can listen ListView.OnScrollListener or this one. it will invoke
      * onXScrolling when header/footer scroll back.
      */
-        public interface OnXScrollListener extends OnScrollListener {
-            public void onXScrolling(View view);
+        public interface OnXScrollListener : IOnScrollListener {
+            void OnXScrolling(View view);
         }
 
         /**
      * implements this interface to get refresh/load more event.
      */
         public interface IXListViewListener {
-            public void onRefresh();
+            void OnRefresh();
 
-            public void onLoadMore();
+            void OnLoadMore();
+        }
+
+        public class GlobalLayoutListener : ViewTreeObserver.IOnGlobalLayoutListener
+        {
+            public void Dispose()
+            {
+                
+            }
+
+            public IntPtr Handle { get; private set; }
+
+            private readonly Action action;
+
+            public GlobalLayoutListener(Action _action)
+            {
+                action = _action;
+            }
+
+            public void OnGlobalLayout()
+            {
+                if(action != null)
+                    action.Invoke();
+            }
+        }
+
+        public class OnClickListener : IOnClickListener
+        {
+            public void Dispose()
+            {
+                
+            }
+
+            public IntPtr Handle { get; private set; }
+
+            private readonly Action action;
+
+            public OnClickListener(Action _action)
+            {
+                action = _action;
+            }
+
+            public void OnClick(View v)
+            {
+                if (action != null)
+                    action.Invoke();
+            }
         }
     }
 }
