@@ -75,41 +75,44 @@ namespace XListViewSharp
             mScroller = new Scroller(context, Android.Views.Animations.DecelerateInterpolator);
             // XListView need the scroll event, and it will dispatch the event to
             // user's listener (as a proxy).
-            super.setOnScrollListener(this);
+            base.SetOnScrollListener(this);
 
             // init header view
             mHeaderView = new XListViewHeader(context);
-            mHeaderViewContent = (RelativeLayout)mHeaderView.FindViewById<RelativeLayout>(Resource.Id.xlistview_header_time);
-            mHeaderTimeView = (TextView) mHeaderView
-                .findViewById(R.id.xlistview_header_time);
-            addHeaderView(mHeaderView);
+            mHeaderViewContent = (RelativeLayout)mHeaderView.FindViewById<RelativeLayout>(Resource.Id.xlistview_footer_content);
+            mHeaderTimeView = (TextView) mHeaderView.FindViewById<TextView>(Resource.Id.xlistview_header_time);
+
+            AddHeaderView(mHeaderView);
 
             // init footer view
             mFooterView = new XListViewFooter(context);
 
             // init header heigh
-            mHeaderView.ViewTreeObserver.AddOnGlobalLayoutListener(
+            mHeaderView.ViewTreeObserver.AddOnGlobalLayoutListener( () => {
+                mHeaderViewHeight = mHeaderViewContent.Height;
+                mHeaderView.ViewTreeObserver.RemoveGlobalOnLayoutListener(this); //?
+            }
+            );
                 
-                
+                /*
                 .getViewTreeObserver().addOnGlobalLayoutListener(
-                new OnGlobalLayoutListener() {
+
                 @Override
                 public void onGlobalLayout() {
                     mHeaderViewHeight = mHeaderViewContent.getHeight();
                     getViewTreeObserver()
                         .removeGlobalOnLayoutListener(this);
                 }
-            });
+            });*/
         }
-
-        @Override
-        public void setAdapter(ListAdapter adapter) {
+            
+        public override void SetAdapter (Android.Widget.IListAdapter adapter) {
             // make sure XListViewFooter is the last footer view, and only add once.
             if (mIsFooterReady == false) {
                 mIsFooterReady = true;
-                addFooterView(mFooterView);
+                AddFooterView(mFooterView);
             }
-            super.setAdapter(adapter);
+            base.SetAdapter(adapter);
         }
 
         /**
@@ -117,12 +120,12 @@ namespace XListViewSharp
      * 
      * @param enable
      */
-        public void setPullRefreshEnable(boolean enable) {
+        public void SetPullRefreshEnable(bool enable) {
             mEnablePullRefresh = enable;
             if (!mEnablePullRefresh) { // disable, hide the content
-                mHeaderViewContent.setVisibility(View.INVISIBLE);
+                mHeaderViewContent.Visibility = ViewStates.Invisible;
             } else {
-                mHeaderViewContent.setVisibility(View.VISIBLE);
+                mHeaderViewContent.Visibility = ViewStates.Visible;
             }
         }
 
@@ -131,22 +134,28 @@ namespace XListViewSharp
      * 
      * @param enable
      */
-        public void setPullLoadEnable(boolean enable) {
+        public void SetPullLoadEnable(bool enable) {
             mEnablePullLoad = enable;
             if (!mEnablePullLoad) {
-                mFooterView.hide();
-                mFooterView.setOnClickListener(null);
+                mFooterView.Hide();
+                mFooterView.SetOnClickListener(null);
             } else {
                 mPullLoading = false;
                 mFooterView.show();
-                mFooterView.setState(XListViewFooter.STATE_NORMAL);
+                mFooterView.SetState(XListViewFooter.STATE_NORMAL);
                 // both "pull up" and "click" will invoke load more.
-                mFooterView.setOnClickListener(new OnClickListener() {
+
+                mFooterView.OnClick += () =>
+                {
+                    mFooterView.StartLoadMore(); //Have to implement these in Footer.
+                };
+
+                /*mFooterView.setOnClickListener(new OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         startLoadMore();
                     }
-                });
+                });*/
             }
         }
 
@@ -156,7 +165,7 @@ namespace XListViewSharp
         public void stopRefresh() {
             if (mPullRefreshing == true) {
                 mPullRefreshing = false;
-                resetHeaderHeight();
+                ResetHeaderHeight();
             }
         }
 
@@ -166,7 +175,7 @@ namespace XListViewSharp
         public void stopLoadMore() {
             if (mPullLoading == true) {
                 mPullLoading = false;
-                mFooterView.setState(XListViewFooter.STATE_NORMAL);
+                mFooterView.SetState(XListViewFooter.STATE_NORMAL);
             }
         }
 
@@ -176,53 +185,69 @@ namespace XListViewSharp
      * @param time
      */
         public void setRefreshTime(String time) {
-            mHeaderTimeView.setText(time);
+            mHeaderTimeView.Text = time;
         }
 
         private void invokeOnScrolling() {
-            if (mScrollListener instanceof OnXScrollListener) {
+            /*if (mScrollListener instanceof OnXScrollListener) {
                 OnXScrollListener l = (OnXScrollListener) mScrollListener;
                 l.onXScrolling(this);
+            }*/
+
+            //Not really gonna work on C#, need to fix this.
+            if (mScrollListener != null)
+            {
+                OnXScrollListener l = (OnXScrollListener)mScrollListener;
+                l.OnXScrolling(this);
             }
         }
 
-        private void updateHeaderHeight(float delta) {
-            mHeaderView.setVisiableHeight((int) delta
-                + mHeaderView.getVisiableHeight());
+        private void UpdateHeaderHeight(float delta) {
+
+            mHeaderView.SetVisibleHeight((int) delta + mHeaderView.GetVisibleHeight());
+
             if (mEnablePullRefresh && !mPullRefreshing) { // 未处于刷新状态，更新箭头
-                if (mHeaderView.getVisiableHeight() > mHeaderViewHeight) {
-                    mHeaderView.setState(XListViewHeader.STATE_READY);
-                } else {
-                    mHeaderView.setState(XListViewHeader.STATE_NORMAL);
+
+                if (mHeaderView.getVisiableHeight() > mHeaderViewHeight) 
+                {               
+                    mHeaderView.SetState(XListViewHeader.STATE_READY);
+                } 
+                else 
+                {
+                    mHeaderView.SetState(XListViewHeader.STATE_NORMAL);
                 }
             }
-            setSelection(0); // scroll to top each time
+            SetSelection(0); // scroll to top each time ///Where is this?
         }
 
         /**
      * reset header view's height.
      */
-        private void resetHeaderHeight() {
-            int height = mHeaderView.getVisiableHeight();
+        private void ResetHeaderHeight() {
+
+            int height = mHeaderView.GetVisiableHeight();
+
             if (height == 0) // not visible.
                 return;
             // refreshing and header isn't shown fully. do nothing.
-            if (mPullRefreshing && height <= mHeaderViewHeight) {
+            if (mPullRefreshing && height <= mHeaderViewHeight) 
                 return;
-            }
+
             int finalHeight = 0; // default: scroll back to dismiss header.
+
             // is refreshing, just scroll back to show all the header.
             if (mPullRefreshing && height > mHeaderViewHeight) {
                 finalHeight = mHeaderViewHeight;
             }
+
             mScrollBack = SCROLLBACK_HEADER;
-            mScroller.startScroll(0, height, 0, finalHeight - height,
+            mScroller.StartScroll(0, height, 0, finalHeight - height,
                 SCROLL_DURATION);
             // trigger computeScroll
-            invalidate();
+            Invalidate();
         }
 
-        private void updateFooterHeight(float delta) {
+        private void UpdateFooterHeight(float delta) {
             int height = mFooterView.getBottomMargin() + (int) delta;
             if (mEnablePullLoad && !mPullLoading) {
                 if (height > PULL_LOAD_MORE_DELTA) { // height enough to invoke load
