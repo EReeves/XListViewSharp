@@ -103,7 +103,9 @@ namespace XListViewSharp
                 mContext = context;
                 LinearLayout moreView = (LinearLayout)LayoutInflater.From(mContext).Inflate(Resource.Layout.xlistview_footer, null);//R.layout.xlistview_footer, null);
                 this.AddView(moreView);//      addView(moreView);
-                moreView.LayoutParameters = (new LinearLayout.LayoutParams(ViewGroup.LayoutParams.FillParent, ViewGroup.LayoutParams.WrapContent));
+            moreView.LayoutParameters = new LinearLayout.LayoutParams(MarginLayoutParams.MatchParent,MarginLayoutParams.WrapContent);
+
+               // (new LinearLayout.LayoutParams(ViewGroup.LayoutParams.FillParent, ViewGroup.LayoutParams.WrapContent));
 
                 mContentView = moreView.FindViewById(Resource.Id.xlistview_header_content);//R.id.xlistview_footer_content);
                 mProgressBar = moreView.FindViewById(Resource.Id.xlistview_footer_progressbar);//.findViewById(R.id.xlistview_footer_progressbar);

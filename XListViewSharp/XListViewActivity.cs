@@ -26,7 +26,7 @@ namespace XListViewSharp
 
             protected override void OnCreate(Bundle savedInstanceState) {
                 base.OnCreate(savedInstanceState);
-                SetContentView(Resource.Layout.Main);
+                SetContentView(Resource.Layout.main);
                 GenItems();
                 mListView = (XListView) FindViewById(Resource.Id.xListView);
                 //findViewById(R.id.xListView);

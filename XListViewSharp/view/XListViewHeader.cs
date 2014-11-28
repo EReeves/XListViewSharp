@@ -59,8 +59,7 @@ namespace XListViewSharp
 
         private void InitView(Context context) {
             // 初始情况，设置下拉刷新view高度为0
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                LayoutParams.FillParent, 0);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(MarginLayoutParams.MatchParent, 0);
             mContainer = (LinearLayout)LayoutInflater.From(context).Inflate(Resource.Layout.xlistview_header, null);
                // Resources..layout.xlistview_header, null);
             mContainer.LayoutParameters =lp; //maycrash? weird in the java adds lp to mcontainer with addview. 
@@ -68,6 +67,7 @@ namespace XListViewSharp
 
             mArrowImageView = FindViewById<ImageView>(Resource.Id.xlistview_header_arrow);
             mHintTextView = FindViewById<TextView>(Resource.Id.xlistview_header_arrow);
+            mProgressBar = FindViewById<ProgressBar>(Resource.Id.xlistview_header_progressbar);
 
             mRotateUpAnim = new RotateAnimation(0.0f, -180.0f, Android.Views.Animations.Dimension.RelativeToSelf, 0.5f, Android.Views.Animations.Dimension.RelativeToSelf, //1 == Animation.RELATIVE_TO_SELF in android. Wasnt sure where to find the cosntant.
                 0.5f);

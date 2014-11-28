@@ -71,6 +71,7 @@ namespace XListViewSharp
 
         public XListView(Context context, IAttributeSet attrs, int defStyle) : base(context, attrs, defStyle) {
             InitWithContext(context);
+
         }
 
         private void InitWithContext(Context context) {
@@ -109,14 +110,21 @@ namespace XListViewSharp
                 }
             });*/
         }
-            
-        public override void SetAdapter (Android.Widget.IListAdapter adapter) {
-            // make sure XListViewFooter is the last footer view, and only add once.
-            if (mIsFooterReady == false) {
-                mIsFooterReady = true;
-                AddFooterView(mFooterView);
+
+        public override IListAdapter Adapter
+        {
+            get
+            {
+                return base.Adapter;
             }
-            base.SetAdapter(adapter);
+            set
+            {
+                if (mIsFooterReady == false) {
+                    mIsFooterReady = true;
+                    AddFooterView(mFooterView);
+                }
+                base.Adapter = value;
+            }
         }
 
         /**
@@ -388,15 +396,8 @@ namespace XListViewSharp
             void OnLoadMore();
         }
 
-        public class GlobalLayoutListener : ViewTreeObserver.IOnGlobalLayoutListener
+        public class GlobalLayoutListener : Java.Lang.Object, ViewTreeObserver.IOnGlobalLayoutListener
         {
-            public void Dispose()
-            {
-                
-            }
-
-            public IntPtr Handle { get; private set; }
-
             private readonly Action action;
 
             public GlobalLayoutListener(Action _action)
@@ -411,15 +412,8 @@ namespace XListViewSharp
             }
         }
 
-        public class OnClickListener : IOnClickListener
+        public class OnClickListener : Java.Lang.Object, IOnClickListener
         {
-            public void Dispose()
-            {
-                
-            }
-
-            public IntPtr Handle { get; private set; }
-
             private readonly Action action;
 
             public OnClickListener(Action _action)
